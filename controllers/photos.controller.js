@@ -7,6 +7,14 @@ exports.add = async (req, res) => {
   try {
     const { title, author, email } = req.fields;
     const file = req.files.file;
+    const sentencePattern = new RegExp(/s+[^.!?]*[.!?]/);
+    const emailPattern = new RegExp (/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/);
+
+    const titleMatched = title.match(sentencePattern).join('');
+    const authorMatched = author.match(sentencePattern).join('');
+    const matchedEmail = email.match(emailPattern).join('');
+   
+    if (titleMatched.length < title.length || authorMatched.length < author.length || matchedEmail.length < email.length) throw new Error ('Invalid characters used');
 
     if(title && author && email && file) { // if fields are not empty...
 
