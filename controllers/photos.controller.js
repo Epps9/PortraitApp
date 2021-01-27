@@ -57,38 +57,34 @@ exports.vote = async (req, res) => {
 
   try {
     const ip = requestIp.getClientIp(req); 
-    console.log('this is your ip', ip);
-    const photoToUpdate = await (Photo.findById({ _id: req.params.id }));
-    const voter = await (Voter.findOne({user: ip}));
-    const voterVotedOnPhoto = voter.votes.includes(photoToUpdate);
-
-    if (voter && voterVotedOnPhoto) {
-      res.status(404).json({ message: 'You can`t vote' })
-
-    } else {
-      const voter = await (Voter.insertOne({user: ip, votes: []}));
-      console.log('this is voter', voter);
-      const allVotes = voter.votes;
-      console.log(allVotes);
-      const updatedVotes = allVotes.push(req.params.id);
-      voter.votes = updatedVotes;
-      voter.save();
-     // Voter.insertOne({user: ip, votes: [req.params.id]});
-     //voter.votes.push(req.params.id);
-      
-    }
-
-    if(!photoToUpdate) res.status(404).json({ message: 'Not found' });
+    const photoToUpdate = await Photo.findOne({_id: req.params.id});
+    const voter = await Voter.findOne({user: ip})
+    if (!photoToUpdate) res.status(404).json({message: 'Not found'});
     else {
-      photoToUpdate.votes++;
-      photoToUpdate.save();
-      res.send({ message: 'OK' });
+      if (voter) {
+        if (voter.votes.includes(photoToUpdate._id)) {
+          res.status(500).json({message: 'you can\'t vote again for the same photo'})
+        } else {
+          voter.votes.push(photoToUpdate._id);
+          photoToUpdate.votes++;
+          photoToUpdate.save();
+          res.send({message: 'OK'});
+        }
+      } else {
+        const newVoter = new Voter({
+          user: ip,
+          votes: [ photoToUpdate._id ]
+        });
+        await newVoter.save();
+        photoToUpdate.votes++;
+        photoToUpdate.save();
+        res.send({message: 'OK'});
+      }
     }
-  } catch(err) {
+  } catch (err) {
     res.status(500).json(err);
   }
-
-
+};
  
   /*try {    
     const photoToUpdate = await Photo.findOne({ _id: req.params.id });
@@ -105,4 +101,4 @@ exports.vote = async (req, res) => {
   } catch(err) {
     res.status(500).json(err);
   }*/
-};
+//};
